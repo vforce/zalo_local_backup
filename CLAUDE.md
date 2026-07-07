@@ -2,6 +2,31 @@
 
 `backup.sh` transforms Zalo's stored media into real `.mp4`/`.jpg` files and pushes them to two remote folders on the same host.
 
+## Setup (first time)
+
+macOS only. From a clone of this repo:
+
+1. **Install tools:** `brew install jpeg-xl ffmpeg rsync` — gives `djxl`, `ffprobe`, and brew's rsync 3.x (the macOS system `openrsync` lacks the flags this uses).
+2. **Passwordless SSH** to your backup server (the script never types a password):
+   ```bash
+   ssh-copy-id user@host      # one-time; skip if key-based SSH already works
+   ```
+3. **Fill in your config:**
+   ```bash
+   cp .env.example .env
+   ```
+   Then edit `.env`:
+   - `ZALO_ACCOUNT_ID` — your account's numeric folder. Find it with `ls ~/Library/Application\ Support/ZaloData/media/` (it's the one long number).
+   - `HOST` — the `user@server` you just set up SSH for.
+   - `DEST1`, `DEST2` — two folders on that server to back into (created automatically if missing).
+4. **Inspect before uploading** (recommended the first time):
+   ```bash
+   ./backup.sh stage          # builds ./staging locally, uploads nothing
+   ```
+5. **Run it:** `./backup.sh`
+
+`SRC`, `STAGE`, and the `rsync` binary are derived automatically — nothing else to configure.
+
 ## Run
 
 ```bash
@@ -21,21 +46,7 @@ Re-runs are incremental and safe to repeat — only new/changed media transfers.
 
 ## Config
 
-Per-machine config lives in `.env` (gitignored). To set up on a new machine:
-
-```bash
-cp .env.example .env   # then fill in the four values
-```
-
-- `ZALO_ACCOUNT_ID` — numeric folder from `ls ~/Library/Application\ Support/ZaloData/media/`
-- `HOST` — SSH target (key-based, no password prompt: `ssh-copy-id user@host`)
-- `DEST1`, `DEST2` — two destination folders on that server
-
-`SRC`, `STAGE`, and the `rsync` path are derived automatically in `backup.sh` (staging lives beside the script; `rsync` falls back Apple-Silicon → Intel → PATH).
-
-## Dependencies
-
-`brew install jpeg-xl ffmpeg rsync` — needs `djxl`, `ffprobe`, and brew's `rsync 3.x` (macOS system `openrsync` lacks the flags).
+All per-machine settings live in `.env` (gitignored — copy `.env.example`, see [Setup](#setup-first-time)). `SRC`, `STAGE`, and the `rsync` path are derived in `backup.sh` (staging lives beside the script; `rsync` falls back Apple-Silicon → Intel → PATH).
 
 ## Zalo quirks handled (don't "simplify" these away)
 
@@ -57,4 +68,4 @@ ssh "$HOST" "find '$DEST1' -type f | wc -l"
 ssh "$HOST" "find '$DEST2' -type f | wc -l"
 ```
 
-Last full run: **20,126 files** on both remotes (1,781 mp4 + 17,417 jpg + 926 jxl.jpg).
+Your counts will differ from the source author's — for reference, their full run was **20,126 files** (1,781 mp4 + 17,417 jpg + 926 jxl.jpg).
