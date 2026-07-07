@@ -1,0 +1,6 @@
+staging/
+*.log
+.lastlog
+.restagelog
+.DS_Store
+.env
